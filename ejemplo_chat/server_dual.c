@@ -43,13 +43,11 @@
 #define PENDING 10
 
 // Cierra el socket al recibir una señal SIGTERM.
-void handler(int signal)
-{
+void handler(int signal){
     exit(EXIT_SUCCESS);
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]){
     struct sockaddr_in addr;
 
     // Descriptores de archivo de los sockets.

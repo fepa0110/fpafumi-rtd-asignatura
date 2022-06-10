@@ -41,14 +41,12 @@
 static int fd;
 
 // Cierra el socket al recibir una señal SIGTERM.
-void handler(int signal)
-{
+void handler(int signal){
     close(fd);
     exit(EXIT_SUCCESS);
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]){
     struct sockaddr_in addr;
 
     // Configura el manejador de señal SIGTERM.

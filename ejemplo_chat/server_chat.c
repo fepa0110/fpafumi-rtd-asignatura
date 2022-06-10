@@ -47,13 +47,11 @@ typedef struct user user_t;
 user_t users[100];
 
 // Cierra el socket al recibir una señal SIGTERM.
-void handler(int signal)
-{
+void handler(int signal){
     exit(EXIT_SUCCESS);
 }
 
-int user_count(int op)
-{
+int user_count(int op){
     int i, c = 0;
     switch(op) {
         case 0: // Cuenta todos los usuarios registrados
@@ -75,8 +73,7 @@ int user_count(int op)
     }
 }
 
-int user_registration(char* username)
-{
+int user_registration(char* username){
     // Busca el primer lugar libre
     int i;
     for (i = 0; i < 100; i++) {
@@ -90,8 +87,7 @@ int user_registration(char* username)
     return -1;
 }
 
-int user_login(int id, struct sockaddr_in addr)
-{
+int user_login(int id, struct sockaddr_in addr){
     int i;
     for (i = 0; i < 100; i++) {
         if (users[i].id == id) {
@@ -104,8 +100,7 @@ int user_login(int id, struct sockaddr_in addr)
     return -1;
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]){
     // Descriptor de archivo del socket.
     static int fd;
 
