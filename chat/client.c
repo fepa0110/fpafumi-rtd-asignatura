@@ -10,6 +10,24 @@
 #define PORT 8888
 #define IP "127.0.0.1"
 
+void showInitMenu(){
+    printf("1. Login\n");
+    printf("2. Registrarse\n");
+    char command[1];
+    // while(command[]){
+        printf("Ingrese una opcion: ");
+        scanf("%s",&command);
+    // command[1] = '\0';
+    // }
+    if(strcmp(command,"1") == 0){
+        printf("Opcion 1");
+    }
+}
+
+/* void send_command(){
+
+} */
+
 int main(int argc, char *argv[]){
     int socketfd;
     struct sockaddr_in addr;
@@ -23,6 +41,8 @@ int main(int argc, char *argv[]){
 
     int fd;
     char buf[100];
+
+    showInitMenu();
 
     for (;;){
         socklen_t socklen = sizeof(struct sockaddr_in);
