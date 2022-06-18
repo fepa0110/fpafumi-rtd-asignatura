@@ -1,10 +1,10 @@
 ## Ingreso de usuario
-- Comando: I <Username>
-- Respuesta: 1 Existoso, 0 Fallido
+- Comando: LOG <Username>
+- Respuesta: 1 Existoso, -1 Fallido
 
 ## Registro de usuario
-- Comando: R <Username>
-- Respuesta: 
+- Comando: REG <Username>
+- Respuesta: 1 Exitoso, -1 Fallido
 
 ## Enviar mensaje a usuario
 - Comando: E <Username>
