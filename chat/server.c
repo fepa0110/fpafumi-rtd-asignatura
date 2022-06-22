@@ -39,6 +39,10 @@
 // Tamaño del buffer en donde se reciben los mensajes.
 #define BUFSIZE 100
 
+#define LOGIN_COMMAND "LOG"
+#define REGISTER_COMMAND "REG"
+#define COUNT_COMMAND "CNT"
+
 struct user
 {
     int id;                  // Identificador númerico único
@@ -115,6 +119,29 @@ int user_login(int id, struct sockaddr_in addr)
         }
     }
     return -1;
+}
+
+void execute_command(char* buffer){
+    char command[3];
+    strncpy(command, buffer,3);
+    command[3] = '\0';
+
+    if (strcmp(command, REGISTER_COMMAND) == 0){
+        printf("Registro\n");
+        sprintf(buffer, "%d\n", user_registration(&(buffer[4])));
+    }
+    else if (strcmp(command, LOGIN_COMMAND) == 0){
+        printf("Login\n");
+    }
+    else if (strcmp(command, COUNT_COMMAND) == 0){
+        printf("Count\n");
+        sprintf(buffer, "%d\n", user_count(atoi(&buffer[4])));
+    }
+    else{
+        sprintf(buffer, "E\n");
+    }
+
+    printf("%s",command);
 }
 
 int main(int argc, char *argv[])
@@ -248,20 +275,10 @@ int main(int argc, char *argv[])
 
                     user_t dest;
 
-                    char command[2];
-                    command[0] = buf[0];
-                    command[1] = buf[1];
-                    command[2] = buf[2];
+                    execute_command(buf);
 
-                    printf("comand: %s\n", command);
-
-                    char LOG_COMMAND[] = "LOG";
-
-                    if(strncmp(buf, LOG_COMMAND, 3) == 0){
-                        printf("Entre");
-                        buf[n - 1] = '\n';
-                        write(sock, buf, strlen(buf));
-                    }
+                    // Limpio el buffer
+                    // memset(buf, 0, strlen(buf));
 
                     /* switch (command)
                     {
@@ -285,8 +302,8 @@ int main(int argc, char *argv[])
                     } */
 
                     // Envía eco
-                    // buf[n - 1] = '\n';
-                    // write(sock, buf, strlen(buf));
+                    buf[n - 1] = '\n';
+                    write(sock, buf, strlen(buf));
                 }
                 // close(sock);
                 // exit(EXIT_SUCCESS);
