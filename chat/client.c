@@ -13,25 +13,43 @@
 void showInitMenu(){
     printf("1. Login\n");
     printf("2. Registrarse\n");
-    char command[1];
-    // while(command[]){
+
+    char command = '0';
+    while (command == '0'){
         printf("Ingrese una opcion: ");
-        scanf("%s",&command);
-    // command[1] = '\0';
-    // }
-    if(strcmp(command,"1") == 0){
-        printf("Opcion 1");
+        scanf("%c\n",&command);
+        // command = '\0';
+    }
+    printf("%s",command);
+
+    switch(command)
+    {
+        case '1':
+            printf("--- Login ---\n");
+            // login_menu();
+            break;
+        case '2':
+            printf("Registrarse\n");
+            break;
+
+        default:
+            break;
     }
 }
 
-/* void send_command(){
-
-} */
+void login_menu(){
+    printf("Menu login");
+    char user[10] = " ";
+    while(strcmp(user," ") == 0){
+        printf("Ingrese su usuario: ");
+        scanf("%s\n",user);
+    }
+    printf("%s\n",user);
+}
 
 int main(int argc, char *argv[]){
     int socketfd;
     struct sockaddr_in addr;
-
     socketfd = socket(AF_INET, SOCK_DGRAM, 0);
 
     memset(&addr, 0, sizeof(struct sockaddr_in));
@@ -43,11 +61,15 @@ int main(int argc, char *argv[]){
     char buf[100];
 
     showInitMenu();
+    printf("Bienvenido cliente\n");
 
     for (;;){
         socklen_t socklen = sizeof(struct sockaddr_in);
 
-        // sendto(socketfd, "Hola\n", 5, 0, (struct sockaddr *)&addr, socklen);
+        scanf("%s",&buf);
+        printf("%s\n",buf);
+
+        sendto(socketfd, &buf, 2, 0, (struct sockaddr *)&addr, socklen);
         // printf("Mensaje enviado\n");
         // sleep();
     }
