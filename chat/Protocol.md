@@ -1,9 +1,9 @@
 ## Ingreso de usuario
-- Comando: L <Username>
+- Comando: L<Username>
 - Respuesta: 1 Existoso, -1 Fallido
 
 ## Registro de usuario
-- Comando: R <Username>
+- Comando: R<Username>
 - Respuesta: 1 Exitoso, -1 Fallido
 
 ## Enviar mensaje a usuario
@@ -14,7 +14,9 @@
 - Comando: F <Directorio> <Username>
 - Respuesta: 
 
-## ¿Recibir archivo?
+sendfile
+## Recibir archivo
+- 
 
 ## Nueva sala
 - Comando: S
@@ -24,6 +26,7 @@
 - Comando: U <Id sala>
 - Respuesta: 1 Exitoso,  -1 Fallido
 
+## Eliminar sala ()
 ## Cantidad de usuarios conectados
 - Comando: O
 

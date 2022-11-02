@@ -14,11 +14,12 @@ void showInitMenu(){
     printf("1. Login\n");
     printf("2. Registrarse\n");
 
+    bool pedirOpcion = true;
     char command = '0';
-    while (command == '0'){
+    while (pedirOpcion){
         printf("Ingrese una opcion: ");
         scanf("%c\n",&command);
-        // command = '\0';
+        if(command == '0') pedirOpcion = false;
     }
     printf("%s",command);
 
