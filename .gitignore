@@ -57,3 +57,6 @@ ejemplo_chat/server_dual
 client
 server
 
+chat/client
+ejemplo_chat/echo_server
+chat/client

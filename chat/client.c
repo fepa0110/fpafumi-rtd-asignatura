@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -10,42 +11,54 @@
 #define PORT 8888
 #define IP "127.0.0.1"
 
-void showInitMenu(){
+void login_menu(int socketfd, struct sockaddr_in addr){
+    socklen_t socklen = sizeof(struct sockaddr_in);
+
+    char comando[11] = "L";
+    char user[10] = " ";
+
+    while(strcmp(user," ") == 0){
+        printf("Ingrese su usuario: ");
+        scanf("%s",&user);
+    }
+    printf("%s\n",user);
+
+    // strcpy("L", &buf);
+    strcat(comando, user);
+    printf("%s\n",comando);
+
+    int sendTo = sendto(socketfd, &comando, sizeof(comando), 0, (struct sockaddr *)&addr, socklen);
+}
+
+void showInitMenu(int socketfd, struct sockaddr_in addr)
+{
     printf("1. Login\n");
     printf("2. Registrarse\n");
 
-    bool pedirOpcion = true;
-    char command = '0';
-    while (pedirOpcion){
+    // bool pedirOpcion = true;
+    int command = 0;
+
+    while(command == 0){
         printf("Ingrese una opcion: ");
-        scanf("%c\n",&command);
-        if(command == '0') pedirOpcion = false;
+        scanf("%d",&command);
+
+        // if(command != '0') pedirOpcion = false;
     }
-    printf("%s",command);
+    printf("%d\n",command);
 
     switch(command)
     {
-        case '1':
+        case 1:
             printf("--- Login ---\n");
-            // login_menu();
+            login_menu(socketfd, addr);
             break;
-        case '2':
+        case 2:
             printf("Registrarse\n");
             break;
 
         default:
             break;
     }
-}
-
-void login_menu(){
-    printf("Menu login");
-    char user[10] = " ";
-    while(strcmp(user," ") == 0){
-        printf("Ingrese su usuario: ");
-        scanf("%s\n",user);
-    }
-    printf("%s\n",user);
 }
 
 int main(int argc, char *argv[]){
@@ -61,16 +74,17 @@ int main(int argc, char *argv[]){
     int fd;
     char buf[100];
 
-    showInitMenu();
-    printf("Bienvenido cliente\n");
 
     for (;;){
+        printf("Bienvenido cliente\n");
         socklen_t socklen = sizeof(struct sockaddr_in);
 
-        scanf("%s",&buf);
-        printf("%s\n",buf);
+        // scanf("%s",&buf);
+        // printf("%s\n",buf);
 
-        sendto(socketfd, &buf, 2, 0, (struct sockaddr *)&addr, socklen);
+        showInitMenu(socketfd, addr);
+
+        // sendto(socketfd, &buf, 2, 0, (struct sockaddr *)&addr, socklen);
         // printf("Mensaje enviado\n");
         // sleep();
     }
