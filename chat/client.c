@@ -11,57 +11,188 @@
 #define PORT 8888
 #define IP "127.0.0.1"
 
-void login_menu(int socketfd, struct sockaddr_in addr){
+void login_menu(int socketfd, struct sockaddr_in addr)
+{
     socklen_t socklen = sizeof(struct sockaddr_in);
 
     char comando[11] = "L";
     char user[10] = " ";
 
-    while(strcmp(user," ") == 0){
+    while (strcmp(user, " ") == 0)
+    {
         printf("Ingrese su usuario: ");
-        scanf("%s",&user);
+        scanf("%s", &user);
     }
-    printf("%s\n",user);
+    printf("%s\n", user);
 
-    // strcpy("L", &buf);
     strcat(comando, user);
-    printf("%s\n",comando);
+    // printf("%s\n", comando);
 
     int sendTo = sendto(socketfd, &comando, sizeof(comando), 0, (struct sockaddr *)&addr, socklen);
 }
 
-void showInitMenu(int socketfd, struct sockaddr_in addr)
-{
+void register_menu(int socketfd, struct sockaddr_in addr){
+    socklen_t socklen = sizeof(struct sockaddr_in);
+
+    char comando[11] = "R";
+    char user[10] = " ";
+
+    while (strcmp(user, " ") == 0)
+    {
+        printf("Ingrese un nombre de usuario: ");
+        scanf("%s", &user);
+    }
+    printf("%s\n", user);
+
+    strcat(comando, user);
+    // printf("%s\n", comando);
+
+    int sendTo = sendto(socketfd, &comando, sizeof(comando), 0, (struct sockaddr *)&addr, socklen);
+}
+
+void showInitMenu(int socketfd, struct sockaddr_in addr){
     printf("1. Login\n");
     printf("2. Registrarse\n");
 
-    // bool pedirOpcion = true;
-    int command = 0;
+    int opcion = 0;
 
-    while(command == 0){
-        printf("Ingrese una opcion: ");
-        scanf("%d",&command);
-
-        // if(command != '0') pedirOpcion = false;
-    }
-    printf("%d\n",command);
-
-    switch(command)
+    while (opcion == 0)
     {
-        case 1:
-            printf("--- Login ---\n");
-            login_menu(socketfd, addr);
-            break;
-        case 2:
-            printf("Registrarse\n");
-            break;
+        printf("\nIngrese una opcion: ");
+        scanf("%d", &opcion);
+    }
+    printf("%d\n", opcion);
 
-        default:
-            break;
+    system("clear");
+
+    switch (opcion)
+    {
+    case 1:
+        printf("--- Login ---\n");
+        login_menu(socketfd, addr);
+        break;
+    case 2:
+        printf("--- Registrarse ---\n");
+        register_menu(socketfd, addr);
+        break;
+
+    default:
+        break;
     }
 }
 
-int main(int argc, char *argv[]){
+/* char* send_message_menu(){
+    socklen_t socklen = sizeof(struct sockaddr_in);
+
+    char comando[1] = "E";
+    char user[11] = " ";
+
+    while (strcmp(user, " ") == 0)
+    {
+        printf("Ingrese un usuario de destino: ");
+        scanf("%s", &user);
+    }
+    printf("%s\n", user);
+
+    // strcat(comando, user);
+    return &user;
+    // printf("%s\n", comando);
+
+    // int sendTo = sendto(socketfd, &comando, sizeof(comando), 0, (struct sockaddr *)&addr, socklen);
+} */
+
+void nuevo_chat(int socketfd, struct sockaddr_in addr){
+    system("clear");
+    
+    socklen_t socklen = sizeof(struct sockaddr_in);
+
+    char comando[36] = "E";
+    char user[10] = " ";
+    bool salir = false; 
+    char mensaje[25];
+
+    while (strcmp(user, " ") == 0)
+    {
+        printf("Ingrese un usuario con quien deseas chatear: ");
+        scanf("%s", &user);
+    }
+    printf("%s\n", user);
+    strcat(comando,user);
+
+    system("clear");
+    printf("%s","Escribe \"salir\" si deseas abandonar el chat\n");
+
+    while (!salir)
+    {
+        scanf("%s",&mensaje);
+        
+        if(strcmp(mensaje, "salir") == 0){
+            salir = true;
+        }
+
+        strcat(comando,mensaje);
+
+        int sendTo = sendto(socketfd, &comando, sizeof(comando), 0, (struct sockaddr *)&addr, socklen);
+    }
+
+    // strcat(comando, user);
+    // return &user;
+    // printf("%s\n", comando);
+
+}
+
+void enviar_archivo(){
+    system("clear");
+    
+    socklen_t socklen = sizeof(struct sockaddr_in);
+
+    char comando[1] = "F";
+    char user[10] = " ";
+    // bool salir = false; 
+    // char mensaje[25];
+
+    while (strcmp(user, " ") == 0)
+    {
+        printf("Ingrese un usuario a quien deseas enviar el archivo: ");
+        scanf("%s", &user);
+    }
+    printf("%s\n", user);
+}
+
+void logged_menu(int socketfd, struct sockaddr_in addr){
+    printf("1. Enviar mensaje\n");
+    printf("2. Enviar archivo\n");
+    printf("3. Salir\n");
+
+    int opcion = 0;
+
+    while (opcion == 0){
+        printf("\nIngrese una opcion: ");
+        scanf("%d", &opcion);
+    }
+    printf("%d\n", opcion);
+
+    switch (opcion){
+    case 1:
+        // printf("--- Enviar mensaje ---\n");
+        nuevo_chat(socketfd, addr);
+        // login_menu(socketfd, addr);
+        break;
+    case 2:
+        enviar_archivo();
+        break;
+    case 3:
+        break;
+
+    default:
+        break;
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    
+
     int socketfd;
     struct sockaddr_in addr;
     socketfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -74,20 +205,21 @@ int main(int argc, char *argv[]){
     int fd;
     char buf[100];
 
+    // printf("Bienvenido cliente\n");
+    socklen_t socklen = sizeof(struct sockaddr_in);
 
-    for (;;){
-        printf("Bienvenido cliente\n");
-        socklen_t socklen = sizeof(struct sockaddr_in);
+    system("clear");
+    printf("--- Bienvenido ---\n\n");
 
-        // scanf("%s",&buf);
-        // printf("%s\n",buf);
+    showInitMenu(socketfd, addr);
 
-        showInitMenu(socketfd, addr);
-
-        // sendto(socketfd, &buf, 2, 0, (struct sockaddr *)&addr, socklen);
-        // printf("Mensaje enviado\n");
-        // sleep();
-    }
+    // for (;;){
+        system("clear");
+        printf("Bienvenido!! Que desea hacer?\n\n");
+        logged_menu(socketfd, addr);
+    // }
+    system("clear");
+    printf("Hasta luego...");
 
     close(socketfd);
 

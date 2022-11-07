@@ -1,3 +1,7 @@
+## Longitud de comandos
+- Username = 10 caracteres
+- Mensaje = 25 caracteres
+
 ## Ingreso de usuario
 - Comando: L<Username>
 - Respuesta: 1 Existoso, -1 Fallido
@@ -7,16 +11,16 @@
 - Respuesta: 1 Exitoso, -1 Fallido
 
 ## Enviar mensaje a usuario
-- Comando: E <Username>
+- Comando: E<Username><Mensaje>
 - Respuesta:
 
 ## Enviar archivo
-- Comando: F <Directorio> <Username>
+- Comando: F<Directorio><Username>
 - Respuesta: 
 
 sendfile
 ## Recibir archivo
-- 
+
 
 ## Nueva sala
 - Comando: S
