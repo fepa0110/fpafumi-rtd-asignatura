@@ -97,7 +97,8 @@ int main(int argc, char* argv[]){
         src_addr_len = sizeof(struct sockaddr_in);
 
         // Recibe un mensaje entrante.
-        ssize_t n = recvfrom(fd, buf, BUFSIZE, 0, (struct sockaddr*) &src_addr, &src_addr_len); 
+        // ssize_t n = recvfrom(fd, buf, BUFSIZE, 0, (struct sockaddr*) &src_addr, &src_addr_len); 
+        ssize_t n = recv(fd, buf, BUFSIZE, 0); 
         if(n == -1) {
             perror("recv");
             exit(EXIT_FAILURE);

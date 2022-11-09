@@ -133,7 +133,10 @@ void nuevo_chat(int socketfd, struct sockaddr_in addr){
         strcat(comando,mensaje);
 
         int sendTo = sendto(socketfd, &comando, sizeof(comando), 0, (struct sockaddr *)&addr, socklen);
+        // int send = sendto(socketfd, &comando, sizeof(comando), 0);
     }
+
+    system("clear");
 
     // strcat(comando, user);
     // return &user;
@@ -160,39 +163,42 @@ void enviar_archivo(){
 }
 
 void logged_menu(int socketfd, struct sockaddr_in addr){
-    printf("1. Enviar mensaje\n");
-    printf("2. Enviar archivo\n");
-    printf("3. Salir\n");
+    bool salir = false;
+    while (!salir){
+        printf("1. Enviar mensaje\n");
+        printf("2. Enviar archivo\n");
+        printf("3. Salir\n");
+    
+        int opcion = 0;
 
-    int opcion = 0;
+        while (opcion == 0){
+            printf("\nIngrese una opcion: ");
+            scanf("%d", &opcion);
+        }
+        printf("%d\n", opcion);
 
-    while (opcion == 0){
-        printf("\nIngrese una opcion: ");
-        scanf("%d", &opcion);
+        switch (opcion){
+        case 1:
+            // printf("--- Enviar mensaje ---\n");
+            nuevo_chat(socketfd, addr);
+            // login_menu(socketfd, addr);
+            break;
+        case 2:
+            enviar_archivo();
+            break;
+        case 3:
+            salir = true;
+            break;
+
+        default:
+            break;
+        }
     }
-    printf("%d\n", opcion);
 
-    switch (opcion){
-    case 1:
-        // printf("--- Enviar mensaje ---\n");
-        nuevo_chat(socketfd, addr);
-        // login_menu(socketfd, addr);
-        break;
-    case 2:
-        enviar_archivo();
-        break;
-    case 3:
-        break;
-
-    default:
-        break;
-    }
 }
 
 int main(int argc, char *argv[])
 {
-    
-
     int socketfd;
     struct sockaddr_in addr;
     socketfd = socket(AF_INET, SOCK_DGRAM, 0);
