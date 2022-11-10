@@ -8,12 +8,13 @@
 #include <arpa/inet.h>
 #include <netinet/ip.h>
 
+#define SA struct sockaddr
 #define PORT 8888
 #define IP "127.0.0.1"
 
-void login_menu(int socketfd, struct sockaddr_in addr)
+void login_menu(int socketfd)
 {
-    socklen_t socklen = sizeof(struct sockaddr_in);
+    // socklen_t socklen = sizeof(struct sockaddr_in);
 
     char comando[11] = "L";
     char user[10] = " ";
@@ -28,11 +29,11 @@ void login_menu(int socketfd, struct sockaddr_in addr)
     strcat(comando, user);
     // printf("%s\n", comando);
 
-    int sendTo = sendto(socketfd, &comando, sizeof(comando), 0, (struct sockaddr *)&addr, socklen);
+    int sendTo = send(socketfd, &comando, sizeof(comando), 0);
 }
 
-void register_menu(int socketfd, struct sockaddr_in addr){
-    socklen_t socklen = sizeof(struct sockaddr_in);
+void register_menu(int socketfd){
+    // socklen_t socklen = sizeof(struct sockaddr_in);
 
     char comando[11] = "R";
     char user[10] = " ";
@@ -47,10 +48,10 @@ void register_menu(int socketfd, struct sockaddr_in addr){
     strcat(comando, user);
     // printf("%s\n", comando);
 
-    int sendTo = sendto(socketfd, &comando, sizeof(comando), 0, (struct sockaddr *)&addr, socklen);
+    int sendTo = send(socketfd, &comando, sizeof(comando), 0);
 }
 
-void showInitMenu(int socketfd, struct sockaddr_in addr){
+void showInitMenu(int socketfd){
     printf("1. Login\n");
     printf("2. Registrarse\n");
 
@@ -69,11 +70,11 @@ void showInitMenu(int socketfd, struct sockaddr_in addr){
     {
     case 1:
         printf("--- Login ---\n");
-        login_menu(socketfd, addr);
+        login_menu(socketfd);
         break;
     case 2:
         printf("--- Registrarse ---\n");
-        register_menu(socketfd, addr);
+        register_menu(socketfd);
         break;
 
     default:
@@ -101,7 +102,7 @@ void showInitMenu(int socketfd, struct sockaddr_in addr){
     // int sendTo = sendto(socketfd, &comando, sizeof(comando), 0, (struct sockaddr *)&addr, socklen);
 } */
 
-void nuevo_chat(int socketfd, struct sockaddr_in addr){
+void nuevo_chat(int socketfd){
     system("clear");
     
     socklen_t socklen = sizeof(struct sockaddr_in);
@@ -132,8 +133,9 @@ void nuevo_chat(int socketfd, struct sockaddr_in addr){
 
         strcat(comando,mensaje);
 
-        int sendTo = sendto(socketfd, &comando, sizeof(comando), 0, (struct sockaddr *)&addr, socklen);
-        // int send = sendto(socketfd, &comando, sizeof(comando), 0);
+        int sendTo = send(socketfd, &comando, sizeof(comando), 0);
+        // int sendt = send(socketfd, &comando, sizeof(comando), 0);
+        // int sendt = write(socketfd, &comando, sizeof(comando));
     }
 
     system("clear");
@@ -162,7 +164,7 @@ void enviar_archivo(){
     printf("%s\n", user);
 }
 
-void logged_menu(int socketfd, struct sockaddr_in addr){
+void logged_menu(int socketfd){
     bool salir = false;
     while (!salir){
         printf("1. Enviar mensaje\n");
@@ -180,7 +182,7 @@ void logged_menu(int socketfd, struct sockaddr_in addr){
         switch (opcion){
         case 1:
             // printf("--- Enviar mensaje ---\n");
-            nuevo_chat(socketfd, addr);
+            nuevo_chat(socketfd);
             // login_menu(socketfd, addr);
             break;
         case 2:
@@ -201,33 +203,53 @@ int main(int argc, char *argv[])
 {
     int socketfd;
     struct sockaddr_in addr;
-    socketfd = socket(AF_INET, SOCK_DGRAM, 0);
+    socketfd = socket(AF_INET, SOCK_STREAM, 0);
 
-    memset(&addr, 0, sizeof(struct sockaddr_in));
+    if (socketfd == -1)
+    {
+        printf("socket creation failed...\n");
+        exit(0);
+    }
+    bzero(&addr, sizeof(addr));
+
+    // assign IP, PORT
     addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = inet_addr(IP);
     addr.sin_port = htons(PORT);
-    inet_aton(IP, &(addr.sin_addr));
 
-    int fd;
+    // connect the client socket to server socket
+    if (connect(socketfd, (SA *)&addr, sizeof(addr)) != 0)
+    {
+        printf("connection with the server failed...\n");
+        exit(0);
+    }
+    else
+        printf("connected to the server..\n");
+
+    // memset(&addr, 0, sizeof(struct sockaddr_in));
+    // addr.sin_family = AF_INET;
+    // addr.sin_port = htons(PORT);
+    // inet_aton(IP, &(addr.sin_addr));
+
     char buf[100];
 
     // printf("Bienvenido cliente\n");
-    socklen_t socklen = sizeof(struct sockaddr_in);
+    // socklen_t socklen = sizeof(struct sockaddr_in);
 
-    system("clear");
+    // system("clear");
     printf("--- Bienvenido ---\n\n");
 
-    showInitMenu(socketfd, addr);
+    showInitMenu(socketfd);
 
     // for (;;){
-        system("clear");
+        // system("clear");
         printf("Bienvenido!! Que desea hacer?\n\n");
-        logged_menu(socketfd, addr);
+        logged_menu(socketfd);
     // }
     system("clear");
     printf("Hasta luego...");
 
     close(socketfd);
 
-    exit(EXIT_SUCCESS);
+    // exit(EXIT_SUCCESS);
 }

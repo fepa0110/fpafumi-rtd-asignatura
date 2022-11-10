@@ -53,7 +53,7 @@ int main(int argc, char* argv[]){
     signal(SIGTERM, handler);
 
     // Crea el socket.
-    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
         perror("socket");
         exit(EXIT_FAILURE);
@@ -98,7 +98,7 @@ int main(int argc, char* argv[]){
 
         // Recibe un mensaje entrante.
         // ssize_t n = recvfrom(fd, buf, BUFSIZE, 0, (struct sockaddr*) &src_addr, &src_addr_len); 
-        ssize_t n = recv(fd, buf, BUFSIZE, 0); 
+        ssize_t n = recv(fd, buf, BUFSIZE,0); 
         if(n == -1) {
             perror("recv");
             exit(EXIT_FAILURE);

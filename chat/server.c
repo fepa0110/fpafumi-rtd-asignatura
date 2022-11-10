@@ -25,6 +25,7 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <signal.h>
 
 // Dirección por defecto del servidor.
@@ -33,6 +34,9 @@
 
 // Tamaño del buffer en donde se reciben los mensajes.
 #define BUFSIZE 100
+
+// Máximo número de conexiones pendientes en el socket TCP.
+#define PENDING 10
 
 // Estructura de datos que almacena información de un usuario.
 struct user {
@@ -101,19 +105,17 @@ int user_login(int id, struct sockaddr_in addr){
 }
 
 int main(int argc, char* argv[]){
-    // Descriptor de archivo del socket.
-    static int fd;
-
-    // Dirección asociada al socket.
     struct sockaddr_in addr;
 
+    // Descriptor de archivo del socket.
+    int socket_tcp;
     // Configura el manejador de señal SIGTERM.
     signal(SIGTERM, handler);
 
     // Crea el socket.
-    fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd == -1) {
-        perror("socket");
+    socket_tcp = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_tcp == -1) {
+        perror("socket_tcp");
         exit(EXIT_FAILURE);
     }
 
@@ -131,30 +133,85 @@ int main(int argc, char* argv[]){
     // Permite reutilizar la dirección que se asociará al socket.
     int optval = 1;
     int optname = SO_REUSEADDR | SO_REUSEPORT;
-    if(setsockopt(fd, SOL_SOCKET, optname, &optval, sizeof(optval)) == -1) {
+    if(setsockopt(socket_tcp, SOL_SOCKET, optname, &optval, sizeof(optval)) == -1) {
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
 
     // Asocia el socket con la dirección indicada. Tradicionalmente esta 
     // operación se conoce como "asignar un nombre al socket".
-    int b = bind(fd, (struct sockaddr*) &addr, sizeof(addr));
+    int b;
+    b = bind(socket_tcp, (struct sockaddr*) &addr, sizeof(addr));
     if (b == -1) {
-        perror("bind");
+        perror("bind tcp");
         exit(EXIT_FAILURE);
     }
+
+    listen(socket_tcp, PENDING);
 
     printf("Escuchando en %s:%d ...\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
     
     char buf[BUFSIZE];
     struct sockaddr_in src_addr;
     socklen_t src_addr_len;
+    fd_set read_fds;
+
+    FD_ZERO(&read_fds);
     
     for(;;) {
+        // Agrega el socketTCP en el set de descriptores de archivos
+        // que se monitorearan por medio de select().
+        FD_SET(socket_tcp, &read_fds);
+
+        int s = select(socket_tcp + 1, &read_fds, NULL, NULL, NULL);
+        if (s == -1) {
+            perror("select");
+            exit(EXIT_FAILURE);
+        }
+
         memset(&src_addr, 0, sizeof(struct sockaddr_in));
         src_addr_len = sizeof(struct sockaddr_in);
+        int sock;
 
-        // Recibe un mensaje entrante.
+        // Existe una conexión entrante en el socket TCP.
+        if (FD_ISSET(socket_tcp, &read_fds)) {
+            int n;
+            sock = accept(socket_tcp, (struct sockaddr*) &src_addr, &src_addr_len);
+            if (sock == -1) {
+                perror("accept");
+                exit(EXIT_FAILURE);
+            }
+
+            pid_t pid = fork();
+            switch (pid) {
+                case -1:
+                    perror("fork");
+                    exit(EXIT_FAILURE);
+                case 0:
+                    while ((n = recv(sock, buf, BUFSIZE,0)) > 0) {
+                        if (n == -1) {
+                            perror("recv");
+                            exit(EXIT_FAILURE);
+                        }
+                        // Elimina '\n' al final del buffer.
+                        buf[n-1] = '\0';
+                        printf("[%s:%d][TCP] %s\n", inet_ntoa(src_addr.sin_addr), ntohs(src_addr.sin_port), buf);
+
+                        // Envía eco
+                        buf[n-1] = '\n';
+                        write(sock, buf, strlen(buf));
+                    }
+                    close(sock);
+                    exit(EXIT_SUCCESS);
+                default:
+                    break;
+            }
+        }
+        close(socket_tcp);
+    }
+}
+
+        /* // Recibe un mensaje entrante.
         ssize_t n = recvfrom(fd, buf, BUFSIZE, 0, (struct sockaddr*) &src_addr, &src_addr_len); 
         if(n == -1) {
             perror("recv");
@@ -198,7 +255,7 @@ int main(int argc, char* argv[]){
     close(fd);
 
     exit(EXIT_SUCCESS);
-}
+}*/
 
 /* void execute_command(char* buffer){
     char command[3];
