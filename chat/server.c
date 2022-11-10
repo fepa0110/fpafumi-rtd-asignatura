@@ -156,6 +156,9 @@ int main(int argc, char* argv[]){
     socklen_t src_addr_len;
     fd_set read_fds;
 
+    char command;
+    user_t dest;
+
     FD_ZERO(&read_fds);
     
     for(;;) {
@@ -195,7 +198,30 @@ int main(int argc, char* argv[]){
                         }
                         // Elimina '\n' al final del buffer.
                         buf[n-1] = '\0';
-                        printf("[%s:%d][TCP] %s\n", inet_ntoa(src_addr.sin_addr), ntohs(src_addr.sin_port), buf);
+                        printf("[%s:%d] %s\n", inet_ntoa(src_addr.sin_addr), ntohs(src_addr.sin_port), buf);
+
+                        command = buf[0];
+
+                        // Ejecuta el comando enviado por el cliente.
+                        switch(command) {
+                            case 'R':
+                                sprintf(buf, "%d\n", user_registration(&(buf[1])));
+                                break;
+                            case 'L':
+                                sprintf(buf, "%d\n", user_login(atoi(&buf[1]), src_addr));
+                                break;
+                            case 'Q':
+                                sprintf(buf, "%d\n", user_count(atoi(&buf[1])));
+                                break;
+                            case 'S':
+                                dest = users[atoi(&buf[1])-1];
+                                sprintf(buf, "%s\n", &buf[2]);
+                                n = sendto(socket_tcp, buf, strlen(&buf[2])+1, 0, (struct sockaddr*) &(dest.addr), src_addr_len);
+                                sprintf(buf, "%ld\n", n);
+                                break;
+                            default:
+                                sprintf(buf, "E\n");
+                        }
 
                         // Envía eco
                         buf[n-1] = '\n';
