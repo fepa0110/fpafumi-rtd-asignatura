@@ -27,6 +27,7 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <signal.h>
+#include <pthread.h>
 
 // Dirección por defecto del servidor.
 #define PORT 8888
@@ -38,17 +39,23 @@
 // Máximo número de conexiones pendientes en el socket TCP.
 #define PENDING 10
 
+#define MAX_USERS 100
+
 // Estructura de datos que almacena información de un usuario.
 struct user {
     int id;                     // Identificador númerico único
-    char name[50];              // Nombre del usuario
+    char name[10];              // Nombre del usuario
     int status;                 // Online - Offline
     struct sockaddr_in addr;    // Client addr
+    int fd;
 };
-typedef struct user user_t;
+typedef struct user User;
 
 // "Lista" de usuarios registrados
-user_t users[100];
+static User *users;
+
+// mutex global
+pthread_mutex_t lock;
 
 // Cierra el socket al recibir una señal SIGTERM.
 void handler(int signal){
@@ -104,7 +111,45 @@ int user_login(int id, struct sockaddr_in addr){
     return -1;
 }
 
+static void* handleHilo(void *arg)
+{       
+    int sock = *((int *) arg);
+
+    int n; 
+
+    char comando[2];
+    memset(&comando, 0, sizeof(comando));
+
+    n = recv(sock, comando, 1, 0);
+    perror("recv hilo");
+
+    comando[1] = '\0';
+
+    printf("Comando: %s",comando);
+        
+    if(strcmp(comando,"L\0") == 0){        
+        printf("Inicio sesion");
+        // int id = handleLoguearUsuario(sock);
+        
+        /* if(id > 0){
+            atenderSesion(sock, id);
+        }else{
+            printf("sesion no iniciada, error [atenderSesion:%d]\n",id);
+        } */
+    }
+        
+    pthread_exit(NULL);
+}
+
 int main(int argc, char* argv[]){
+    pthread_t hilo;
+    
+    if(pthread_mutex_init(&lock, NULL) <0){
+        exit(EXIT_FAILURE);
+    }
+
+    users = malloc(sizeof(User) * MAX_USERS);
+
     struct sockaddr_in addr;
 
     // Descriptor de archivo del socket.
@@ -157,7 +202,7 @@ int main(int argc, char* argv[]){
     fd_set read_fds;
 
     char command;
-    user_t dest;
+    User dest;
 
     FD_ZERO(&read_fds);
     
@@ -176,8 +221,26 @@ int main(int argc, char* argv[]){
         src_addr_len = sizeof(struct sockaddr_in);
         int sock;
 
+        if (FD_ISSET(socket_tcp, &read_fds)){
+            sock = accept(socket_tcp, (struct sockaddr *)&src_addr, &src_addr_len);
+            printf("socket accept %d\n", sock);
+
+            pthread_create(&hilo,NULL,&handleHilo,(void*) &sock);
+            
+        }
+
+
+    }
+    
+    if ( pthread_join(hilo, NULL) != 0) {
+        perror("pthread_join");
+    }
+
+    close(socket_tcp);
+}
+
         // Existe una conexión entrante en el socket TCP.
-        if (FD_ISSET(socket_tcp, &read_fds)) {
+        /*if (FD_ISSET(socket_tcp, &read_fds)) {
             int n;
             sock = accept(socket_tcp, (struct sockaddr*) &src_addr, &src_addr_len);
             if (sock == -1) {
@@ -232,76 +295,4 @@ int main(int argc, char* argv[]){
                 default:
                     break;
             }
-        }
-        close(socket_tcp);
-    }
-}
-
-        /* // Recibe un mensaje entrante.
-        ssize_t n = recvfrom(fd, buf, BUFSIZE, 0, (struct sockaddr*) &src_addr, &src_addr_len); 
-        if(n == -1) {
-            perror("recv");
-            exit(EXIT_FAILURE);
-        }
-
-        user_t dest;
-        char command = buf[0];
-        printf("%c\n", command);
-
-        // Ejecuta el comando enviado por el cliente.
-        switch(command) {
-            case 'R':
-                sprintf(buf, "%d\n", user_registration(&(buf[1])));
-                break;
-            case 'L':
-                sprintf(buf, "%d\n", user_login(atoi(&buf[1]), src_addr));
-                break;
-            case 'Q':
-                sprintf(buf, "%d\n", user_count(atoi(&buf[1])));
-                break;
-            case 'S':
-                dest = users[atoi(&buf[1])-1];
-                sprintf(buf, "%s\n", &buf[2]);
-                n = sendto(fd, buf, strlen(&buf[2])+1, 0, (struct sockaddr*) &(dest.addr), src_addr_len);
-                sprintf(buf, "%ld\n", n);
-                break;
-            default:
-                sprintf(buf, "E\n");
-        }
-
-        // Envía la respuesta al cliente.
-        n = sendto(fd, buf, strlen(buf), 0, (struct sockaddr*) &src_addr, src_addr_len);
-        if (n == -1) {
-            perror("sendto");
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    // Cierra el socket.
-    close(fd);
-
-    exit(EXIT_SUCCESS);
-}*/
-
-/* void execute_command(char* buffer){
-    char command[3];
-    strncpy(command, buffer,3);
-    command[3] = '\0';
-
-    if (strcmp(command, REGISTER_COMMAND) == 0){
-        printf("Registro\n");
-        sprintf(buffer, "%d\n", user_registration(&(buffer[4])));
-    }
-    else if (strcmp(command, LOGIN_COMMAND) == 0){
-        printf("Login\n");
-    }
-    else if (strcmp(command, COUNT_COMMAND) == 0){
-        printf("Count\n");
-        sprintf(buffer, "%d\n", user_count(atoi(&buffer[4])));
-    }
-    else{
-        sprintf(buffer, "E\n");
-    }
-
-    printf("%s",command);
-} */
+        }*/

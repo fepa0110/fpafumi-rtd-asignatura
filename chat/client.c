@@ -82,26 +82,6 @@ void showInitMenu(int socketfd){
     }
 }
 
-/* char* send_message_menu(){
-    socklen_t socklen = sizeof(struct sockaddr_in);
-
-    char comando[1] = "E";
-    char user[11] = " ";
-
-    while (strcmp(user, " ") == 0)
-    {
-        printf("Ingrese un usuario de destino: ");
-        scanf("%s", &user);
-    }
-    printf("%s\n", user);
-
-    // strcat(comando, user);
-    return &user;
-    // printf("%s\n", comando);
-
-    // int sendTo = sendto(socketfd, &comando, sizeof(comando), 0, (struct sockaddr *)&addr, socklen);
-} */
-
 void nuevo_chat(int socketfd){
     system("clear");
     
