@@ -98,7 +98,7 @@ int user_registration(char* username){
     return -1;
 }
 
-int user_login(int id, struct sockaddr_in addr){
+/* int user_login(int id, struct sockaddr_in addr){
     int i;
     for (i = 0; i < 100; i++) {
         if (users[i].id == id) {
@@ -109,27 +109,43 @@ int user_login(int id, struct sockaddr_in addr){
         }
     }
     return -1;
+} */
+
+int user_login(int socket){
+    printf("user_login");
+    User usuario;
+
+    memset(&usuario,0,sizeof(usuario));
+
+    char buf[11];
+
+    int n = recv(socket, buf, sizeof(buf),0);
+
+    return 0;
+
 }
 
 static void* handleHilo(void *arg)
 {       
-    int sock = *((int *) arg);
+    int socket = *((int *) arg);
 
     int n; 
 
     char comando[2];
     memset(&comando, 0, sizeof(comando));
 
-    n = recv(sock, comando, 1, 0);
+    n = recv(socket, comando, 1, 0);
     perror("recv hilo");
+    printf("n: %d\n",n);
 
     comando[1] = '\0';
 
-    printf("Comando: %s",comando);
+    printf("Comando: %s\n",comando);
         
     if(strcmp(comando,"L\0") == 0){        
         printf("Inicio sesion");
         // int id = handleLoguearUsuario(sock);
+        int id = user_login(socket);
         
         /* if(id > 0){
             atenderSesion(sock, id);

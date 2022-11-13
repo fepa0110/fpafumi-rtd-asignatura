@@ -176,6 +176,8 @@ void logged_menu(int socketfd){
             break;
         }
     }
+    
+    exit(EXIT_SUCCESS);
 
 }
 
