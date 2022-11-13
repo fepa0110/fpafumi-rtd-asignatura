@@ -98,7 +98,7 @@ int user_registration(char* username){
     return -1;
 }
 
-/* int user_login(int id, struct sockaddr_in addr){
+int user_login(int id, struct sockaddr_in addr){
     int i;
     for (i = 0; i < 100; i++) {
         if (users[i].id == id) {
@@ -109,9 +109,9 @@ int user_registration(char* username){
         }
     }
     return -1;
-} */
+}
 
-int user_login(int socket){
+int handleLoginHilo(int socket){
     printf("user_login");
     User usuario;
 
@@ -120,6 +120,12 @@ int user_login(int socket){
     char buf[11];
 
     int n = recv(socket, buf, sizeof(buf),0);
+
+    printf("%s",&buf);
+
+    // COnvierto en int el buf
+    // CAMBIAR A FUTURO
+    usuario.id = atoi(buf);
 
     return 0;
 
@@ -144,14 +150,7 @@ static void* handleHilo(void *arg)
         
     if(strcmp(comando,"L\0") == 0){        
         printf("Inicio sesion");
-        // int id = handleLoguearUsuario(sock);
-        int id = user_login(socket);
-        
-        /* if(id > 0){
-            atenderSesion(sock, id);
-        }else{
-            printf("sesion no iniciada, error [atenderSesion:%d]\n",id);
-        } */
+        int id = handleLoginHilo(socket);
     }
         
     pthread_exit(NULL);
