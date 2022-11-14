@@ -4,11 +4,15 @@
 
 ## Ingreso de usuario
 - Comando: L<Username>
-- Respuesta: 1 Existoso, -1 Fallido
+- Respuesta: 1 Existoso, 0 Fallido
 
 ## Registro de usuario
 - Comando: R<Username>
-- Respuesta: 1 Exitoso, -1 Fallido
+- Respuesta: 1 Exitoso, 0 Fallido
+
+## Iniciar chat
+- Comando: C
+- Sin respuesta
 
 ## Enviar mensaje a usuario
 - Comando: E<Username><Mensaje>
@@ -17,6 +21,10 @@
 ## Enviar archivo
 - Comando: F<Directorio><Username>
 - Respuesta: 
+
+## Cerrar sesion/Salir
+- Comando: X
+- Respuesta: 1 Exitoso
 
 sendfile
 ## Recibir archivo

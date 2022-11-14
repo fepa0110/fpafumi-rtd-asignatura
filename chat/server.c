@@ -34,19 +34,23 @@
 #define IP   "127.0.0.1"
 
 // Tamaño del buffer en donde se reciben los mensajes.
-#define BUFSIZE 100
+#define BUFFER_SIZE 25
 
 // Máximo número de conexiones pendientes en el socket TCP.
 #define PENDING 10
 
 #define MAX_USERS 100
 
+#define CODIGO_FALLIDO 0
+
+#define CODIGO_EXITOSO 1
+
 // Estructura de datos que almacena información de un usuario.
 struct user {
     int id;                     // Identificador númerico único
-    char name[10];              // Nombre del usuario
+    char name[10];              // Nickname del usuario
     int status;                 // Online - Offline
-    struct sockaddr_in addr;    // Client addr
+    // struct sockaddr_in addr;    // Client addr
     int fd;
 };
 typedef struct user User;
@@ -84,51 +88,148 @@ int user_count(int op){
     }
 }
 
-int user_registration(char* username){
+int user_registration(User usuario){
     // Busca el primer lugar libre
     int i;
     for (i = 0; i < 100; i++) {
         if (users[i].id == 0) {
             users[i].id = i+1;
             users[i].status = 0;
-            strncpy(users[i].name, username, strlen(username));
+            strncpy(users[i].name, usuario.name, strlen(usuario.name));
+            users[i].fd = usuario.fd;
             return users[i].id;
         }
     }
     return -1;
 }
 
-int user_login(int id, struct sockaddr_in addr){
+int handleRegisterHilo(int socket){
+    printf("user_registration\n");
+    User usuario;
+    usuario.fd = socket;
+
+    memset(&usuario,0,sizeof(usuario));
+
+    char buf[10];
+
+    int n = recv(socket, buf, sizeof(buf),0);
+
+    printf("%s\n",&buf);
+
+    strncpy(usuario.name,buf,10);
+    
+    int idRegister = user_registration(usuario);
+
+    if(idRegister == -1){
+        printf("Fallo registro\n");
+    }
+    else{
+        printf("Usuario registrado\n");
+        send(socket,"Registrado",sizeof("Registrado"),0);
+    }
+
+    return 0;
+
+}
+
+int user_login(User usuario){
+    pthread_mutex_lock(&lock);
+
     int i;
     for (i = 0; i < 100; i++) {
-        if (users[i].id == id) {
+        if (strcmp(users[i].name,usuario.name) == 0) {
             users[i].status = 1;
-            users[i].addr = addr;
-            printf("[%s:%d]\n", inet_ntoa(users[i].addr.sin_addr), ntohs(users[i].addr.sin_port));
+            users[i].fd = usuario.fd;
+            printf("[%s:%d]\n", users[i].name ,users[i].id);
             return users[i].status;
         }
     }
     return -1;
 }
 
+/* void sendMessage(int socket){
+
+} */
+
+void handleSendMessage(int socket){
+    User usuarioDestino;
+
+    memset(&usuarioDestino, 0, sizeof(usuarioDestino));
+    
+    char buf[36]; 
+
+    char comando[2];
+    comando[0] = ' ';
+    comando[1] = '\0';
+
+    while(strcmp(comando,"X\0") != 0){
+        printf("Entre\n");
+        int recvn = recv(socket, buf, 36, 0);
+        
+        comando[0] = buf[0];
+        comando[1] = '\0';
+        // perror("recv mensaje ");
+
+        printf("Mensaje: %s\n",buf);
+
+    }
+
+    printf("Chat finalizado");
+
+}
+
 int handleLoginHilo(int socket){
-    printf("user_login");
+    printf("user_login\n");
     User usuario;
+    usuario.fd = socket;
 
     memset(&usuario,0,sizeof(usuario));
 
-    char buf[11];
+    char buf[10];
 
     int n = recv(socket, buf, sizeof(buf),0);
 
     printf("%s",&buf);
 
-    // COnvierto en int el buf
-    // CAMBIAR A FUTURO
-    usuario.id = atoi(buf);
+    strncpy(usuario.name,buf,10);
+    
+    int codLogin = user_login(usuario);
 
-    return 0;
+    if(codLogin == 1){
+        printf("Usuario logueado\n");
+        send(socket, "1",sizeof("1"),0);
+        return 1;
+    }
 
+    printf("Usuario no logueado\n");
+    send(socket, "-1",sizeof("-1"),0);
+
+    return CODIGO_FALLIDO;
+}
+
+// Metodo para manejar el usuario logueado
+void handleLoggedUser(int socket){
+    char comando[2];
+    memset(&comando, 0, sizeof(comando));
+
+    int codigo;
+    int n = recv(socket, comando, 1, 0);
+    perror("recv hilo");
+    printf("n: %d\n",n);
+
+    comando[1] = '\0';
+
+    printf("Comando: %s\n",comando);
+        
+    if(strcmp(comando,"C\0") == 0){        
+        printf("Iniciando chat\n");
+        handleSendMessage(socket);
+    }
+    else if (strcmp(comando,"R\0") == 0)
+    {
+        printf("Registro");
+        codigo = handleRegisterHilo(socket);
+    }
 }
 
 static void* handleHilo(void *arg)
@@ -136,6 +237,8 @@ static void* handleHilo(void *arg)
     int socket = *((int *) arg);
 
     int n; 
+
+    int codigo;
 
     char comando[2];
     memset(&comando, 0, sizeof(comando));
@@ -149,14 +252,25 @@ static void* handleHilo(void *arg)
     printf("Comando: %s\n",comando);
         
     if(strcmp(comando,"L\0") == 0){        
-        printf("Inicio sesion");
-        int id = handleLoginHilo(socket);
+        printf("Inicio sesion\n");
+        codigo = handleLoginHilo(socket);
     }
-        
+    else if (strcmp(comando,"R\0") == 0)
+    {
+        printf("Registro");
+        codigo = handleRegisterHilo(socket);
+    }
+
+    if(codigo == CODIGO_EXITOSO){
+        handleLoggedUser(socket);
+    }
+    // else??
+
     pthread_exit(NULL);
 }
 
 int main(int argc, char* argv[]){
+
     pthread_t hilo;
     
     if(pthread_mutex_init(&lock, NULL) <0){
@@ -166,6 +280,14 @@ int main(int argc, char* argv[]){
     users = malloc(sizeof(User) * MAX_USERS);
 
     struct sockaddr_in addr;
+
+    users[0].id = 1;
+    strcpy(users[0].name,"fb");
+    users[0].status = 0;
+
+    users[1].id = 2;
+    strcpy(users[1].name,"aa");
+    users[1].status = 0;
 
     // Descriptor de archivo del socket.
     int socket_tcp;
@@ -211,7 +333,7 @@ int main(int argc, char* argv[]){
 
     printf("Escuchando en %s:%d ...\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
     
-    char buf[BUFSIZE];
+    char buf[BUFFER_SIZE];
     struct sockaddr_in src_addr;
     socklen_t src_addr_len;
     fd_set read_fds;
@@ -253,61 +375,3 @@ int main(int argc, char* argv[]){
 
     close(socket_tcp);
 }
-
-        // Existe una conexión entrante en el socket TCP.
-        /*if (FD_ISSET(socket_tcp, &read_fds)) {
-            int n;
-            sock = accept(socket_tcp, (struct sockaddr*) &src_addr, &src_addr_len);
-            if (sock == -1) {
-                perror("accept");
-                exit(EXIT_FAILURE);
-            }
-
-            pid_t pid = fork();
-            switch (pid) {
-                case -1:
-                    perror("fork");
-                    exit(EXIT_FAILURE);
-                case 0:
-                    while ((n = recv(sock, buf, BUFSIZE,0)) > 0) {
-                        if (n == -1) {
-                            perror("recv");
-                            exit(EXIT_FAILURE);
-                        }
-                        // Elimina '\n' al final del buffer.
-                        buf[n-1] = '\0';
-                        printf("[%s:%d] %s\n", inet_ntoa(src_addr.sin_addr), ntohs(src_addr.sin_port), buf);
-
-                        command = buf[0];
-
-                        // Ejecuta el comando enviado por el cliente.
-                        switch(command) {
-                            case 'R':
-                                sprintf(buf, "%d\n", user_registration(&(buf[1])));
-                                break;
-                            case 'L':
-                                sprintf(buf, "%d\n", user_login(atoi(&buf[1]), src_addr));
-                                break;
-                            case 'Q':
-                                sprintf(buf, "%d\n", user_count(atoi(&buf[1])));
-                                break;
-                            case 'S':
-                                dest = users[atoi(&buf[1])-1];
-                                sprintf(buf, "%s\n", &buf[2]);
-                                n = sendto(socket_tcp, buf, strlen(&buf[2])+1, 0, (struct sockaddr*) &(dest.addr), src_addr_len);
-                                sprintf(buf, "%ld\n", n);
-                                break;
-                            default:
-                                sprintf(buf, "E\n");
-                        }
-
-                        // Envía eco
-                        buf[n-1] = '\n';
-                        write(sock, buf, strlen(buf));
-                    }
-                    close(sock);
-                    exit(EXIT_SUCCESS);
-                default:
-                    break;
-            }
-        }*/

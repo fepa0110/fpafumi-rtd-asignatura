@@ -12,7 +12,15 @@
 #define PORT 8888
 #define IP "127.0.0.1"
 
-void login_menu(int socketfd)
+#define CODIGO_FALLIDO 0
+
+#define CODIGO_EXITOSO 1
+
+void vaciarStdin(){
+    while (getchar() != '\n');
+}
+
+int login_menu(int socketfd)
 {
     // socklen_t socklen = sizeof(struct sockaddr_in);
 
@@ -24,12 +32,19 @@ void login_menu(int socketfd)
         printf("Ingrese su usuario: ");
         scanf("%s", &user);
     }
-    printf("%s\n", user);
+    // printf("%s\n", user);
 
     strcat(comando, user);
     // printf("%s\n", comando);
 
     int sendTo = send(socketfd, &comando, sizeof(comando), 0);
+
+    char mensajeLeido[1];
+
+    int recibido = recv(socketfd, mensajeLeido, sizeof(mensajeLeido),0);
+    printf("%s\n",mensajeLeido);
+
+    return atoi(mensajeLeido);
 }
 
 void register_menu(int socketfd){
@@ -49,9 +64,14 @@ void register_menu(int socketfd){
     // printf("%s\n", comando);
 
     int sendTo = send(socketfd, &comando, sizeof(comando), 0);
+
+    char mensajeLeido[25];
+
+    int recibido = recv(socketfd, mensajeLeido, sizeof(mensajeLeido),0);
+    printf("%s",mensajeLeido);
 }
 
-void showInitMenu(int socketfd){
+int showInitMenu(int socketfd){
     printf("1. Login\n");
     printf("2. Registrarse\n");
 
@@ -70,7 +90,7 @@ void showInitMenu(int socketfd){
     {
     case 1:
         printf("--- Login ---\n");
-        login_menu(socketfd);
+        return login_menu(socketfd);
         break;
     case 2:
         printf("--- Registrarse ---\n");
@@ -80,6 +100,8 @@ void showInitMenu(int socketfd){
     default:
         break;
     }
+
+    return 1;
 }
 
 void nuevo_chat(int socketfd){
@@ -91,6 +113,10 @@ void nuevo_chat(int socketfd){
     char user[10] = " ";
     bool salir = false; 
     char mensaje[25];
+
+    send(socketfd,"C",sizeof("C"),0);
+
+    vaciarStdin();
 
     while (strcmp(user, " ") == 0)
     {
@@ -108,6 +134,8 @@ void nuevo_chat(int socketfd){
         scanf("%s",&mensaje);
         
         if(strcmp(mensaje, "salir") == 0){
+            vaciarStdin();
+            send(socketfd,"X\0",sizeof("X\0"),0);
             salir = true;
         }
 
@@ -144,12 +172,35 @@ void enviar_archivo(){
     printf("%s\n", user);
 }
 
+void buscar_usuario(int socketfd){
+    system("clear");
+    
+    char comando[1] = "B";
+    char user[10] = " ";
+    char infoUsuario[50];
+    // bool salir = false; 
+    // char mensaje[25];
+
+    while (strcmp(user, " ") == 0)
+    {
+        printf("Ingresa el usuario que deseas buscar: ");
+        scanf("%s", &user);
+    }
+
+    printf("%s\n", user);
+
+    int recibido = recv(socketfd, infoUsuario, sizeof(infoUsuario),0);
+
+    printf("%s\n",infoUsuario);
+}
+
 void logged_menu(int socketfd){
     bool salir = false;
     while (!salir){
         printf("1. Enviar mensaje\n");
         printf("2. Enviar archivo\n");
-        printf("3. Salir\n");
+        printf("3. Buscar usuario\n");
+        printf("4. Salir\n");
     
         int opcion = 0;
 
@@ -169,6 +220,9 @@ void logged_menu(int socketfd){
             enviar_archivo();
             break;
         case 3:
+            buscar_usuario(socketfd);
+            break;
+        case 4:
             salir = true;
             break;
 
@@ -218,17 +272,15 @@ int main(int argc, char *argv[])
     // printf("Bienvenido cliente\n");
     // socklen_t socklen = sizeof(struct sockaddr_in);
 
-    // system("clear");
+    system("clear");
     printf("--- Bienvenido ---\n\n");
 
-    showInitMenu(socketfd);
-
-    // for (;;){
-        // system("clear");
+    if(showInitMenu(socketfd) == 1){
         printf("Bienvenido!! Que desea hacer?\n\n");
         logged_menu(socketfd);
-    // }
-    system("clear");
+    }
+
+    // system("clear");
     printf("Hasta luego...");
 
     close(socketfd);
