@@ -44,6 +44,8 @@ int login_menu(int socketfd)
     int recibido = recv(socketfd, mensajeLeido, sizeof(mensajeLeido),0);
     printf("%s\n",mensajeLeido);
 
+    vaciarStdin();
+    
     return atoi(mensajeLeido);
 }
 
@@ -114,7 +116,7 @@ void nuevo_chat(int socketfd){
     bool salir = false; 
     char mensaje[25];
 
-    send(socketfd,"C",sizeof("C"),0);
+    // send(socketfd,"C",sizeof("C"),0);
 
     vaciarStdin();
 
@@ -124,6 +126,7 @@ void nuevo_chat(int socketfd){
         scanf("%s", &user);
     }
     printf("%s\n", user);
+    // sprintf()
     strcat(comando,user);
 
     system("clear");
@@ -177,6 +180,8 @@ void buscar_usuario(int socketfd){
     
     char comando[1] = "B";
     char user[10] = " ";
+
+    char buf[12];
     char infoUsuario[50];
     // bool salir = false; 
     // char mensaje[25];
@@ -188,6 +193,12 @@ void buscar_usuario(int socketfd){
     }
 
     printf("%s\n", user);
+
+    sprintf(buf,"B%s\0",user);
+
+    printf("Buffer: %s",buf);
+
+    int enviado = send(socketfd,buf,sizeof(buf),0);
 
     int recibido = recv(socketfd, infoUsuario, sizeof(infoUsuario),0);
 

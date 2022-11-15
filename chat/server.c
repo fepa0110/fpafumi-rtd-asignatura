@@ -58,6 +58,8 @@ typedef struct user User;
 // "Lista" de usuarios registrados
 static User *users;
 
+int cantidadRegistrados;
+
 // mutex global
 pthread_mutex_t lock;
 
@@ -66,7 +68,7 @@ void handler(int signal){
     exit(EXIT_SUCCESS);
 }
 
-int user_count(int op){
+int userCount(int op){
     int i, c = 0;
     switch(op) {
         case 0: // Cuenta todos los usuarios registrados
@@ -88,7 +90,7 @@ int user_count(int op){
     }
 }
 
-int user_registration(User usuario){
+int userRegistration(User usuario){
     // Busca el primer lugar libre
     int i;
     for (i = 0; i < 100; i++) {
@@ -104,7 +106,7 @@ int user_registration(User usuario){
 }
 
 int handleRegisterHilo(int socket){
-    printf("user_registration\n");
+    printf("userRegistration\n");
     User usuario;
     usuario.fd = socket;
 
@@ -118,7 +120,7 @@ int handleRegisterHilo(int socket){
 
     strncpy(usuario.name,buf,10);
     
-    int idRegister = user_registration(usuario);
+    int idRegister = userRegistration(usuario);
 
     if(idRegister == -1){
         printf("Fallo registro\n");
@@ -132,7 +134,7 @@ int handleRegisterHilo(int socket){
 
 }
 
-int user_login(User usuario){
+int userLogin(User usuario){
     pthread_mutex_lock(&lock);
 
     int i;
@@ -147,64 +149,62 @@ int user_login(User usuario){
     return -1;
 }
 
-/* void sendMessage(int socket){
+void sendMessage(int socket, User usuario, char* mensaje){
+    pthread_mutex_lock(&lock);
 
-} */
+    int n = send(usuario.fd, mensaje, sizeof(mensaje),0);
+
+
+    pthread_mutex_unlock(&lock);
+
+}
 
 void handleSendMessage(int socket){
     User usuarioDestino;
 
     memset(&usuarioDestino, 0, sizeof(usuarioDestino));
     
-    char buf[36]; 
+    char buf[10]; 
 
     char comando[2];
     comando[0] = ' ';
     comando[1] = '\0';
 
-    while(strcmp(comando,"X\0") != 0){
+    // while(strcmp(comando,"X\0") != 0){
         printf("Entre\n");
-        int recvn = recv(socket, buf, 36, 0);
-        
-        comando[0] = buf[0];
-        comando[1] = '\0';
+        int n = recv(socket, buf, 10, 0);
+
+        // comando[0] = buf[0];
+        // comando[1] = '\0';
         // perror("recv mensaje ");
 
         printf("Mensaje: %s\n",buf);
 
-    }
+        // sendMessage(socket);
+
+    // }
 
     printf("Chat finalizado");
 
 }
 
-int handleLoginHilo(int socket){
-    printf("user_login\n");
-    User usuario;
-    usuario.fd = socket;
-
-    memset(&usuario,0,sizeof(usuario));
-
-    char buf[10];
-
-    int n = recv(socket, buf, sizeof(buf),0);
-
-    printf("%s",&buf);
-
-    strncpy(usuario.name,buf,10);
-    
-    int codLogin = user_login(usuario);
-
-    if(codLogin == 1){
-        printf("Usuario logueado\n");
-        send(socket, "1",sizeof("1"),0);
-        return 1;
+// Buscar usuario por username
+int buscarUsuario(char* username){
+    for(int indice=0; indice <= cantidadRegistrados; indice++){
+        if(strcmp(users[indice].name, username)) return indice;
     }
 
-    printf("Usuario no logueado\n");
-    send(socket, "-1",sizeof("-1"),0);
+    return -1;
+}
 
-    return CODIGO_FALLIDO;
+int handleBuscarUsuario(int socket){
+    char username[10];
+
+    int n = recv(socket, username, sizeof(username),0);
+
+    User usuarioBuscado = users[buscarUsuario(username)];
+
+    n = send(socket, usuarioBuscado.name, sizeof(usuarioBuscado.id), 0);
 }
 
 // Metodo para manejar el usuario logueado
@@ -221,16 +221,49 @@ void handleLoggedUser(int socket){
 
     printf("Comando: %s\n",comando);
         
-    if(strcmp(comando,"C\0") == 0){        
+    if(strcmp(comando,"E\0") == 0){        
         printf("Iniciando chat\n");
         handleSendMessage(socket);
     }
-    else if (strcmp(comando,"R\0") == 0)
-    {
+    else if(strcmp(comando,"R\0") == 0){
         printf("Registro");
         codigo = handleRegisterHilo(socket);
     }
+    else if(strcmp(comando,"B\0") == 0){
+        codigo = handleBuscarUsuario(socket);
+    }
+    
 }
+
+int handleLoginHilo(int socket){
+    printf("userLogin\n");
+    User usuario;
+    usuario.fd = socket;
+
+    memset(&usuario,0,sizeof(usuario));
+
+    char buf[10];
+
+    int n = recv(socket, buf, sizeof(buf),0);
+
+    printf("%s",&buf);
+
+    strncpy(usuario.name,buf,10);
+    
+    int codLogin = userLogin(usuario);
+
+    if(codLogin == 1){
+        printf("Usuario logueado\n");
+        send(socket, "1",sizeof("1"),0);
+        return 1;
+    }
+
+    printf("Usuario no logueado\n");
+    send(socket, "-1",sizeof("-1"),0);
+
+    return CODIGO_FALLIDO;
+}
+
 
 static void* handleHilo(void *arg)
 {       
@@ -270,7 +303,6 @@ static void* handleHilo(void *arg)
 }
 
 int main(int argc, char* argv[]){
-
     pthread_t hilo;
     
     if(pthread_mutex_init(&lock, NULL) <0){
@@ -288,6 +320,8 @@ int main(int argc, char* argv[]){
     users[1].id = 2;
     strcpy(users[1].name,"aa");
     users[1].status = 0;
+
+    cantidadRegistrados = 2;
 
     // Descriptor de archivo del socket.
     int socket_tcp;
