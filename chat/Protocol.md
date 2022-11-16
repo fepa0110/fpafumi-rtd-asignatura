@@ -10,13 +10,13 @@
 - Comando: R<Username>
 - Respuesta: 1 Exitoso, 0 Fallido
 
-## Iniciar chat
-- Comando: C
-- Sin respuesta
+## Iniciar envio de mensaje a usuario
+- Comando: E<Username>
+- Respuesta: 1 Exitoso (usuario encontrado), 0 Fallido (No encontro usuario)
 
-## Enviar mensaje a usuario
-- Comando: E<Username><Mensaje>
-- Respuesta:
+## Ver mensajes
+- Comando: V
+- Respuesta: 
 
 ## Enviar archivo
 - Comando: F<Directorio><Username>

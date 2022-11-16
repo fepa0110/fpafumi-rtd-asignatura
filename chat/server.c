@@ -50,7 +50,6 @@ struct user {
     int id;                     // Identificador númerico único
     char name[10];              // Nickname del usuario
     int status;                 // Online - Offline
-    // struct sockaddr_in addr;    // Client addr
     int fd;
 };
 typedef struct user User;
@@ -91,18 +90,26 @@ int userCount(int op){
 }
 
 int userRegistration(User usuario){
+    pthread_mutex_lock(&lock);
+
     // Busca el primer lugar libre
     int i;
+
+    int resultado = -1;
+
     for (i = 0; i < 100; i++) {
         if (users[i].id == 0) {
             users[i].id = i+1;
             users[i].status = 0;
             strncpy(users[i].name, usuario.name, strlen(usuario.name));
             users[i].fd = usuario.fd;
-            return users[i].id;
+            resultado = users[i].id;
         }
     }
-    return -1;
+
+    pthread_mutex_unlock(&lock);
+
+    return resultado;
 }
 
 int handleRegisterHilo(int socket){
@@ -138,15 +145,20 @@ int userLogin(User usuario){
     pthread_mutex_lock(&lock);
 
     int i;
+    int resultado = -1;
+
     for (i = 0; i < 100; i++) {
         if (strcmp(users[i].name,usuario.name) == 0) {
             users[i].status = 1;
             users[i].fd = usuario.fd;
             printf("[%s:%d]\n", users[i].name ,users[i].id);
-            return users[i].status;
+            resultado = users[i].status;
         }
     }
-    return -1;
+
+    pthread_mutex_unlock(&lock);
+
+    return resultado;
 }
 
 void sendMessage(int socket, User usuario, char* mensaje){
