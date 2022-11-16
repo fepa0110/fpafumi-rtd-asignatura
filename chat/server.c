@@ -183,18 +183,16 @@ void handleSendMessage(int socket){
     comando[1] = '\0';
 
     // while(strcmp(comando,"X\0") != 0){
-        printf("Entre\n");
-        int n = recv(socket, buf, 10, 0);
+    printf("Entre\n");
+    int n = recv(socket, buf, 10, 0);
 
-        // comando[0] = buf[0];
-        // comando[1] = '\0';
-        // perror("recv mensaje ");
+    // comando[0] = buf[0];
+    // comando[1] = '\0';
+    // perror("recv mensaje ");
 
-        printf("Mensaje: %s\n",buf);
+    // printf("Mensaje: %s\n",buf);
 
-        // sendMessage(socket);
-
-    // }
+    // sendMessage(socket);
 
     printf("Chat finalizado");
 
@@ -237,10 +235,6 @@ void handleLoggedUser(int socket){
         printf("Iniciando chat\n");
         handleSendMessage(socket);
     }
-    else if(strcmp(comando,"R\0") == 0){
-        printf("Registro");
-        codigo = handleRegisterHilo(socket);
-    }
     else if(strcmp(comando,"B\0") == 0){
         codigo = handleBuscarUsuario(socket);
     }
@@ -276,9 +270,7 @@ int handleLoginHilo(int socket){
     return CODIGO_FALLIDO;
 }
 
-
-static void* handleHilo(void *arg)
-{       
+static void* handleHilo(void *arg){       
     int socket = *((int *) arg);
 
     int n; 
