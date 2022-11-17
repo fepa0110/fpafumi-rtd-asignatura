@@ -1,22 +1,3 @@
-/**
- * Servidor Chat UDP
- * -----------------
- *
- * El servidor escucha en el IP:PUERTO indicado como parámetro en la línea de
- * comando, o 127.0.0.1:8888 en caso de que no se indique una dirección.
- *
- * Para terminar la ejecución del servidor, envíar una señal SIGTERM (^C)
- *
- * Se puede probar el funcionamiento del servidor con el programa netcat:
- *
- * nc -u 127.0.0.1 8888
- *
- *
- * ---
- * Autor: Francisco Paez
- * Fecha: 2022-06-03
- * Última modificacion: 2022-06-03
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -176,7 +157,7 @@ void handleSendMessage(int socket){
 
     memset(&usuarioDestino, 0, sizeof(usuarioDestino));
     
-    char buf[10]; 
+    char usuarioLeido[10]; 
 
     char comando[2];
     comando[0] = ' ';
@@ -184,13 +165,13 @@ void handleSendMessage(int socket){
 
     // while(strcmp(comando,"X\0") != 0){
     printf("Entre\n");
-    int n = recv(socket, buf, 10, 0);
+    int n = recv(socket, usuarioLeido, sizeof(usuarioLeido), 0);
 
     // comando[0] = buf[0];
     // comando[1] = '\0';
     // perror("recv mensaje ");
 
-    // printf("Mensaje: %s\n",buf);
+    printf("User: %s\n",buf);
 
     // sendMessage(socket);
 

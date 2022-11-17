@@ -111,33 +111,31 @@ void nuevo_chat(int socketfd){
     
     socklen_t socklen = sizeof(struct sockaddr_in);
 
-    char comando[36] = "E";
+    char comando[11] = "E";
     char user[10] = " ";
     bool salir = false; 
     char mensaje[25];
 
-    // send(socketfd,"C",sizeof("C"),0);
+    // vaciarStdin();
 
-    vaciarStdin();
-
-    while (strcmp(user, " ") == 0)
-    {
+    while (strcmp(user, " ") == 0){
         printf("Ingrese un usuario con quien deseas chatear: ");
         scanf("%s", &user);
     }
     printf("%s\n", user);
-    // sprintf()
     strcat(comando,user);
 
-    system("clear");
+    int sendUser = send(socketfd, &comando, sizeof(comando), 0);
+
+    // system("clear");
     printf("%s","Escribe \"salir\" si deseas abandonar el chat\n");
 
-    while (!salir)
+    /* while (!salir)
     {
         scanf("%s",&mensaje);
         
         if(strcmp(mensaje, "salir") == 0){
-            vaciarStdin();
+            // vaciarStdin();
             send(socketfd,"X\0",sizeof("X\0"),0);
             salir = true;
         }
@@ -145,15 +143,9 @@ void nuevo_chat(int socketfd){
         strcat(comando,mensaje);
 
         int sendTo = send(socketfd, &comando, sizeof(comando), 0);
-        // int sendt = send(socketfd, &comando, sizeof(comando), 0);
-        // int sendt = write(socketfd, &comando, sizeof(comando));
-    }
+    } */
 
     system("clear");
-
-    // strcat(comando, user);
-    // return &user;
-    // printf("%s\n", comando);
 
 }
 
