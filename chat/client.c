@@ -115,6 +115,7 @@ void nuevo_chat(int socketfd){
     char user[10] = " ";
     bool salir = false; 
     char mensaje[25];
+    char respuesta[1];
 
     // vaciarStdin();
 
@@ -128,24 +129,30 @@ void nuevo_chat(int socketfd){
     int sendUser = send(socketfd, &comando, sizeof(comando), 0);
 
     // system("clear");
-    printf("%s","Escribe \"salir\" si deseas abandonar el chat\n");
+    // printf("%s","Escribe \"salir\" si deseas abandonar el chat\n");
 
-    /* while (!salir)
-    {
-        scanf("%s",&mensaje);
+    int recvRespuesta = recv(socketfd,respuesta,sizeof(respuesta),0);
+    printf("respuesta: %s",respuesta);
+    // while (!salir)
+    // {
+    // system("clear");
+    
+    if(atoi(respuesta) == 1){
+        scanf("Ingrese un mensaje: %s",&mensaje);
+        int mensajeEnviado = send(socketfd, &comando, sizeof(comando), 0);
+        printf("--- Mensaje enviado: %d ---\n\n",mensajeEnviado);
+    }
+    else printf("--- Hubo un error al enviar el mensaje ---\n\n");
+        // strcat(comando,mensaje);
         
-        if(strcmp(mensaje, "salir") == 0){
+/*         if(strcmp(mensaje, "salir") == 0){
             // vaciarStdin();
             send(socketfd,"X\0",sizeof("X\0"),0);
             salir = true;
-        }
+        } */
 
-        strcat(comando,mensaje);
 
-        int sendTo = send(socketfd, &comando, sizeof(comando), 0);
-    } */
-
-    system("clear");
+    // }
 
 }
 

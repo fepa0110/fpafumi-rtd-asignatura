@@ -142,13 +142,28 @@ int userLogin(User usuario){
     return resultado;
 }
 
-void sendMessage(int socket, User usuario, char* mensaje){
-    pthread_mutex_lock(&lock);
+// Buscar usuario por username
+int buscarUsuario(char* username){
+    for(int indice=0; indice <= cantidadRegistrados; indice++){
+        if(strcmp(users[indice].name, username)) return indice;
+    }
 
-    int n = send(usuario.fd, mensaje, sizeof(mensaje),0);
+    return -1;
+}
 
+void sendMessage(int socket, User usuario){
+    // pthread_mutex_lock(&lock);
+    char mensaje[25];
 
-    pthread_mutex_unlock(&lock);
+    // Leo el mensaje enviado
+    int leido = recv(socket,mensaje, sizeof(mensaje),0);
+
+    printf("Mensaje: %s",mensaje);
+
+    //Envio el mensaje recibido al destino
+    int mensajeEnviado = send(usuario.fd, mensaje, sizeof(mensaje),0);
+    printf("Mensaje enviado");
+    // pthread_mutex_unlock(&lock);
 
 }
 
@@ -171,21 +186,25 @@ void handleSendMessage(int socket){
     // comando[1] = '\0';
     // perror("recv mensaje ");
 
-    printf("User: %s\n",buf);
+    printf("User: %s\n",usuarioLeido);
 
-    // sendMessage(socket);
+    int indiceUsuarioDestino = buscarUsuario(usuarioLeido);
+    printf("indice: %d",indiceUsuarioDestino);
+    
+    if(indiceUsuarioDestino == -1){
+        n = send(socket,"0",sizeof("0"),0);
+        printf("Usuario no encontrado");
+    }
+    else{
+        n = send(socket,"1",sizeof("1"),0);
+        printf("Usuario encontrado");
+
+        usuarioDestino = users[indiceUsuarioDestino];
+        sendMessage(socket, usuarioDestino);
+    }
 
     printf("Chat finalizado");
 
-}
-
-// Buscar usuario por username
-int buscarUsuario(char* username){
-    for(int indice=0; indice <= cantidadRegistrados; indice++){
-        if(strcmp(users[indice].name, username)) return indice;
-    }
-
-    return -1;
 }
 
 int handleBuscarUsuario(int socket){
