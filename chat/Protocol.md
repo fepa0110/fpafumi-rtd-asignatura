@@ -1,10 +1,11 @@
 ## Longitud de comandos
 - Username = 10 caracteres
 - Mensaje = 25 caracteres
+- Informacion de usuario buscado = 50 caracteres
 
 ## Ingreso de usuario
 - Comando: L<Username>
-- Respuesta: 1 Existoso, 0 Fallido
+- Respuesta: 0 Existoso, -1 Fallido
 
 ## Registro de usuario
 - Comando: R<Username>
@@ -12,7 +13,7 @@
 
 ## Iniciar envio de mensaje a usuario
 - Comando: E<Username>
-- Respuesta: 1 Exitoso (usuario encontrado), 0 Fallido (No encontro usuario)
+- Respuesta: 0 Exitoso (usuario encontrado), -1 Fallido (No encontro usuario)
 
 ## Ver mensajes
 - Comando: V

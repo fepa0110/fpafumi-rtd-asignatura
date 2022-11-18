@@ -12,18 +12,16 @@
 #define PORT 8888
 #define IP "127.0.0.1"
 
-#define CODIGO_FALLIDO 0
+#define CODIGO_FALLIDO -1
 
-#define CODIGO_EXITOSO 1
+#define CODIGO_EXITOSO 0
 
 void vaciarStdin(){
     while (getchar() != '\n');
 }
 
-int login_menu(int socketfd)
+int loginMenu(int socketfd)
 {
-    // socklen_t socklen = sizeof(struct sockaddr_in);
-
     char comando[11] = "L";
     char user[10] = " ";
 
@@ -32,24 +30,22 @@ int login_menu(int socketfd)
         printf("Ingrese su usuario: ");
         scanf("%s", &user);
     }
-    // printf("%s\n", user);
 
     strcat(comando, user);
-    // printf("%s\n", comando);
 
     int sendTo = send(socketfd, &comando, sizeof(comando), 0);
 
-    char mensajeLeido[1];
+    char mensajeLeido[2];
 
     int recibido = recv(socketfd, mensajeLeido, sizeof(mensajeLeido),0);
-    printf("%s\n",mensajeLeido);
+    // printf("%s\n",mensajeLeido);
 
     vaciarStdin();
     
     return atoi(mensajeLeido);
 }
 
-void register_menu(int socketfd){
+void registerMenu(int socketfd){
     // socklen_t socklen = sizeof(struct sockaddr_in);
 
     char comando[11] = "R";
@@ -92,32 +88,32 @@ int showInitMenu(int socketfd){
     {
     case 1:
         printf("--- Login ---\n");
-        return login_menu(socketfd);
+        return loginMenu(socketfd);
         break;
     case 2:
         printf("--- Registrarse ---\n");
-        register_menu(socketfd);
+        registerMenu(socketfd);
         break;
 
     default:
         break;
     }
 
-    return 1;
+    system("clear");
+
+    return CODIGO_FALLIDO;
 }
 
-void nuevo_chat(int socketfd){
+void nuevoChat(int socketfd){
     system("clear");
     
-    socklen_t socklen = sizeof(struct sockaddr_in);
-
     char comando[11] = "E";
     char user[10] = " ";
     bool salir = false; 
     char mensaje[25];
-    char respuesta[1];
+    char respuesta[2];
 
-    // vaciarStdin();
+    vaciarStdin();
 
     while (strcmp(user, " ") == 0){
         printf("Ingrese un usuario con quien deseas chatear: ");
@@ -126,45 +122,35 @@ void nuevo_chat(int socketfd){
     printf("%s\n", user);
     strcat(comando,user);
 
+    // Envio el comando E<username>
     int sendUser = send(socketfd, &comando, sizeof(comando), 0);
 
-    // system("clear");
-    // printf("%s","Escribe \"salir\" si deseas abandonar el chat\n");
-
+    // Obtengo la respuesta del servidor
     int recvRespuesta = recv(socketfd,respuesta,sizeof(respuesta),0);
-    printf("respuesta: %s",respuesta);
-    // while (!salir)
-    // {
-    // system("clear");
-    
-    if(atoi(respuesta) == 1){
-        scanf("Ingrese un mensaje: %s",&mensaje);
+    printf("respuesta: %s\n",respuesta);
+
+    // Si se encontro el usuario ingresado
+    if(atoi(respuesta) == CODIGO_EXITOSO){
+        vaciarStdin();
+
+        printf("Ingrese un mensaje: ");
+        scanf("%s",&mensaje);
+
         int mensajeEnviado = send(socketfd, &comando, sizeof(comando), 0);
         printf("--- Mensaje enviado: %d ---\n\n",mensajeEnviado);
     }
     else printf("--- Hubo un error al enviar el mensaje ---\n\n");
-        // strcat(comando,mensaje);
-        
-/*         if(strcmp(mensaje, "salir") == 0){
-            // vaciarStdin();
-            send(socketfd,"X\0",sizeof("X\0"),0);
-            salir = true;
-        } */
-
-
-    // }
 
 }
 
-void enviar_archivo(){
+void enviarArchivo(){
     system("clear");
     
+    printf("Caracteristica aun no implementada\n\n");
     socklen_t socklen = sizeof(struct sockaddr_in);
 
     char comando[1] = "F";
     char user[10] = " ";
-    // bool salir = false; 
-    // char mensaje[25];
 
     while (strcmp(user, " ") == 0)
     {
@@ -174,7 +160,7 @@ void enviar_archivo(){
     printf("%s\n", user);
 }
 
-void buscar_usuario(int socketfd){
+void buscarUsuario(int socketfd){
     system("clear");
     
     char comando[1] = "B";
@@ -204,13 +190,39 @@ void buscar_usuario(int socketfd){
     printf("%s\n",infoUsuario);
 }
 
-void logged_menu(int socketfd){
+void verMensajes(int socketfd){
+    system("clear");
+
+    int enviado = send(socketfd, "V",sizeof("V"),0);
+
+    char mensajes[100];
+    char salir[10] = " ";
+    int recibido = recv(socketfd, mensajes, sizeof(mensajes), 0);
+
+    printf("--Mis mensajes--\n\n");
+
+    printf("%s",mensajes);
+    printf("Escribi \"salir\" para volver atras\n");
+
+    do{
+        scanf("%s",&salir);
+        // printf("\n");
+    }
+    while(strcmp(salir,"salir") != 0);
+
+    system("clear");
+}
+
+void loggedMenu(int socketfd){
     bool salir = false;
+
     while (!salir){
+        printf("---Menu principal---\n\n");
         printf("1. Enviar mensaje\n");
-        printf("2. Enviar archivo\n");
-        printf("3. Buscar usuario\n");
-        printf("4. Salir\n");
+        printf("2. Ver mis mensajes\n");
+        printf("3. Enviar archivo\n");
+        printf("4. Buscar usuario\n");
+        printf("5. Salir\n");
     
         int opcion = 0;
 
@@ -223,16 +235,19 @@ void logged_menu(int socketfd){
         switch (opcion){
         case 1:
             // printf("--- Enviar mensaje ---\n");
-            nuevo_chat(socketfd);
-            // login_menu(socketfd, addr);
+            nuevoChat(socketfd);
+            // loginMenu(socketfd, addr);
             break;
         case 2:
-            enviar_archivo();
+            verMensajes(socketfd);
             break;
         case 3:
-            buscar_usuario(socketfd);
+            enviarArchivo();
             break;
         case 4:
+            buscarUsuario(socketfd);
+            break;
+        case 5:
             salir = true;
             break;
 
@@ -240,9 +255,8 @@ void logged_menu(int socketfd){
             break;
         }
     }
-    
-    exit(EXIT_SUCCESS);
 
+    system("clear");
 }
 
 int main(int argc, char *argv[])
@@ -266,34 +280,30 @@ int main(int argc, char *argv[])
     // connect the client socket to server socket
     if (connect(socketfd, (SA *)&addr, sizeof(addr)) != 0)
     {
-        printf("connection with the server failed...\n");
+        printf("No se pudo conectar al servidor...\n");
         exit(0);
     }
     else
         printf("connected to the server..\n");
 
-    // memset(&addr, 0, sizeof(struct sockaddr_in));
-    // addr.sin_family = AF_INET;
-    // addr.sin_port = htons(PORT);
-    // inet_aton(IP, &(addr.sin_addr));
-
     char buf[100];
-
-    // printf("Bienvenido cliente\n");
-    // socklen_t socklen = sizeof(struct sockaddr_in);
 
     system("clear");
     printf("--- Bienvenido ---\n\n");
 
-    if(showInitMenu(socketfd) == 1){
+    if(showInitMenu(socketfd) == CODIGO_EXITOSO){
+        system("clear");
+
         printf("Bienvenido!! Que desea hacer?\n\n");
-        logged_menu(socketfd);
+        loggedMenu(socketfd);
+    }
+    else{
+        printf("Usuario no encontrado");
     }
 
-    // system("clear");
-    printf("Hasta luego...");
+    printf("\nHasta luego...");
 
     close(socketfd);
 
-    // exit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 }

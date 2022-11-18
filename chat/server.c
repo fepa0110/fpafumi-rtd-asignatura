@@ -22,9 +22,9 @@
 
 #define MAX_USERS 100
 
-#define CODIGO_FALLIDO 0
+#define CODIGO_FALLIDO -1
 
-#define CODIGO_EXITOSO 1
+#define CODIGO_EXITOSO 0
 
 // Estructura de datos que almacena información de un usuario.
 struct user {
@@ -32,6 +32,7 @@ struct user {
     char name[10];              // Nickname del usuario
     int status;                 // Online - Offline
     int fd;
+    char buf[100];
 };
 typedef struct user User;
 
@@ -76,7 +77,7 @@ int userRegistration(User usuario){
     // Busca el primer lugar libre
     int i;
 
-    int resultado = -1;
+    int resultado = CODIGO_FALLIDO;
 
     for (i = 0; i < 100; i++) {
         if (users[i].id == 0) {
@@ -98,6 +99,8 @@ int handleRegisterHilo(int socket){
     User usuario;
     usuario.fd = socket;
 
+    int resultado = CODIGO_FALLIDO;
+
     memset(&usuario,0,sizeof(usuario));
 
     char buf[10];
@@ -108,9 +111,9 @@ int handleRegisterHilo(int socket){
 
     strncpy(usuario.name,buf,10);
     
-    int idRegister = userRegistration(usuario);
+    resultado = userRegistration(usuario);
 
-    if(idRegister == -1){
+    if(resultado == CODIGO_FALLIDO){
         printf("Fallo registro\n");
     }
     else{
@@ -118,7 +121,7 @@ int handleRegisterHilo(int socket){
         send(socket,"Registrado",sizeof("Registrado"),0);
     }
 
-    return 0;
+    return resultado;
 
 }
 
@@ -126,14 +129,14 @@ int userLogin(User usuario){
     pthread_mutex_lock(&lock);
 
     int i;
-    int resultado = -1;
+    int resultado = CODIGO_FALLIDO;
 
     for (i = 0; i < 100; i++) {
         if (strcmp(users[i].name,usuario.name) == 0) {
             users[i].status = 1;
             users[i].fd = usuario.fd;
             printf("[%s:%d]\n", users[i].name ,users[i].id);
-            resultado = users[i].status;
+            resultado = i;
         }
     }
 
@@ -148,7 +151,7 @@ int buscarUsuario(char* username){
         if(strcmp(users[indice].name, username)) return indice;
     }
 
-    return -1;
+    return CODIGO_FALLIDO;
 }
 
 void sendMessage(int socket, User usuario){
@@ -161,6 +164,7 @@ void sendMessage(int socket, User usuario){
     printf("Mensaje: %s",mensaje);
 
     //Envio el mensaje recibido al destino
+    sprintf(usuario.buf, "",mensaje);
     int mensajeEnviado = send(usuario.fd, mensaje, sizeof(mensaje),0);
     printf("Mensaje enviado");
     // pthread_mutex_unlock(&lock);
@@ -191,12 +195,12 @@ void handleSendMessage(int socket){
     int indiceUsuarioDestino = buscarUsuario(usuarioLeido);
     printf("indice: %d",indiceUsuarioDestino);
     
-    if(indiceUsuarioDestino == -1){
-        n = send(socket,"0",sizeof("0"),0);
+    if(indiceUsuarioDestino == CODIGO_FALLIDO){
+        n = send(socket,"-1",sizeof("-1"),0);
         printf("Usuario no encontrado");
     }
     else{
-        n = send(socket,"1",sizeof("1"),0);
+        n = send(socket,"0",sizeof("0"),0);
         printf("Usuario encontrado");
 
         usuarioDestino = users[indiceUsuarioDestino];
@@ -217,8 +221,16 @@ int handleBuscarUsuario(int socket){
     n = send(socket, usuarioBuscado.name, sizeof(usuarioBuscado.id), 0);
 }
 
+void handleVerMensajes(int socket, int indiceUsuario){
+    User usuario = users[indiceUsuario];
+
+    int mensajesEnviados = send(socket, usuario.buf, sizeof(usuario.buf),0);
+
+    printf("Mensajes mostrados...");
+}
+
 // Metodo para manejar el usuario logueado
-void handleLoggedUser(int socket){
+void handleLoggedUser(int socket, int indiceUsuario){
     char comando[2];
     memset(&comando, 0, sizeof(comando));
 
@@ -234,6 +246,10 @@ void handleLoggedUser(int socket){
     if(strcmp(comando,"E\0") == 0){        
         printf("Iniciando chat\n");
         handleSendMessage(socket);
+    }
+    else if(strcmp(comando,"V\0") == 0){        
+        printf("Mostrando mensajes\n");
+        handleVerMensajes(socket, indiceUsuario);
     }
     else if(strcmp(comando,"B\0") == 0){
         codigo = handleBuscarUsuario(socket);
@@ -256,12 +272,14 @@ int handleLoginHilo(int socket){
 
     strncpy(usuario.name,buf,10);
     
-    int codLogin = userLogin(usuario);
+    int indiceLogin = userLogin(usuario);
 
-    if(codLogin == 1){
+    if(indiceLogin > CODIGO_FALLIDO){
         printf("Usuario logueado\n");
-        send(socket, "1",sizeof("1"),0);
-        return 1;
+
+        // Envio login exitoso
+        send(socket, "0",sizeof("0"),0);
+        return indiceLogin;
     }
 
     printf("Usuario no logueado\n");
@@ -275,7 +293,7 @@ static void* handleHilo(void *arg){
 
     int n; 
 
-    int codigo;
+    int indiceLogin;
 
     char comando[2];
     memset(&comando, 0, sizeof(comando));
@@ -290,16 +308,16 @@ static void* handleHilo(void *arg){
         
     if(strcmp(comando,"L\0") == 0){        
         printf("Inicio sesion\n");
-        codigo = handleLoginHilo(socket);
+        indiceLogin = handleLoginHilo(socket);
     }
     else if (strcmp(comando,"R\0") == 0)
     {
         printf("Registro");
-        codigo = handleRegisterHilo(socket);
+        indiceLogin = handleRegisterHilo(socket);
     }
 
-    if(codigo == CODIGO_EXITOSO){
-        handleLoggedUser(socket);
+    if(indiceLogin > CODIGO_FALLIDO){
+        handleLoggedUser(socket, indiceLogin);
     }
     // else??
 
