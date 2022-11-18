@@ -147,11 +147,21 @@ int userLogin(User usuario){
 
 // Buscar usuario por username
 int buscarUsuario(char* username){
-    for(int indice=0; indice <= cantidadRegistrados; indice++){
-        if(strcmp(users[indice].name, username)) return indice;
+    printf("BuscarUsuario");
+
+    int indiceUsuario = CODIGO_FALLIDO;
+
+    for(int indice=0; indice < MAX_USERS; indice++){
+        printf("for");
+
+        if(strncmp(users[indice].name, username, 10) == 0){
+            indiceUsuario = indice;
+        } 
     }
 
-    return CODIGO_FALLIDO;
+    printf("Fin BuscarUsuario");
+
+    return indiceUsuario;
 }
 
 void sendMessage(int socket, User usuario){
@@ -174,7 +184,7 @@ void sendMessage(int socket, User usuario){
 void handleSendMessage(int socket){
     User usuarioDestino;
 
-    memset(&usuarioDestino, 0, sizeof(usuarioDestino));
+    // memset(&usuarioDestino, 0, sizeof(usuarioDestino));
     
     char usuarioLeido[10]; 
 
@@ -185,7 +195,7 @@ void handleSendMessage(int socket){
     // while(strcmp(comando,"X\0") != 0){
     printf("Entre\n");
     int n = recv(socket, usuarioLeido, sizeof(usuarioLeido), 0);
-
+    
     // comando[0] = buf[0];
     // comando[1] = '\0';
     // perror("recv mensaje ");
