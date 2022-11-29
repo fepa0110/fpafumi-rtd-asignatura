@@ -146,66 +146,72 @@ int userLogin(User usuario){
 }
 
 // Buscar usuario por username
-int buscarUsuario(char* username){
+int buscarUsuario(User usuario){
+    pthread_mutex_lock(&lock);
+
     printf("BuscarUsuario");
 
     int indiceUsuario = CODIGO_FALLIDO;
+    int i;
 
-    for(int indice=0; indice < MAX_USERS; indice++){
+    for(i=0; i < cantidadRegistrados; i++){
         printf("for");
 
-        if(strncmp(users[indice].name, username, 10) == 0){
-            indiceUsuario = indice;
-        } 
+        if(strncmp(users[i].name, usuario.name, 10) == 0){
+            printf("Lo encontre!!");
+            return i;
+        }
     }
 
     printf("Fin BuscarUsuario");
 
+    pthread_mutex_unlock(&lock);
+
     return indiceUsuario;
+
+
 }
 
-void sendMessage(int socket, User usuario){
+void sendMessage(int socket, int indiceUsuarioLogueado, User usuarioDestino){
     // pthread_mutex_lock(&lock);
     char mensaje[25];
 
+    User usuarioLogueado = users[indiceUsuarioLogueado];
     // Leo el mensaje enviado
-    int leido = recv(socket,mensaje, sizeof(mensaje),0);
+    int leido = recv(socket, mensaje, sizeof(mensaje),0);
 
     printf("Mensaje: %s",mensaje);
 
     //Envio el mensaje recibido al destino
-    sprintf(usuario.buf, "",mensaje);
-    int mensajeEnviado = send(usuario.fd, mensaje, sizeof(mensaje),0);
+    sprintf(usuarioDestino.buf, "[%s] %s",usuarioLogueado.name,mensaje);
+    // int mensajeEnviado = send(usuario.fd, mensaje, sizeof(mensaje),0);
     printf("Mensaje enviado");
     // pthread_mutex_unlock(&lock);
 
 }
 
-void handleSendMessage(int socket){
+void handleSendMessage(int socket, int indiceUsuarioLogueado){
+
     User usuarioDestino;
 
-    // memset(&usuarioDestino, 0, sizeof(usuarioDestino));
+    memset(&usuarioDestino, 0, sizeof(usuarioDestino));
     
-    char usuarioLeido[10]; 
+    char usernameLeido[10]; 
 
-    char comando[2];
-    comando[0] = ' ';
-    comando[1] = '\0';
+    int indiceUDestino = CODIGO_FALLIDO;
 
-    // while(strcmp(comando,"X\0") != 0){
     printf("Entre\n");
-    int n = recv(socket, usuarioLeido, sizeof(usuarioLeido), 0);
+    int n = recv(socket, usernameLeido, sizeof(usernameLeido), 0);
     
-    // comando[0] = buf[0];
-    // comando[1] = '\0';
-    // perror("recv mensaje ");
+    printf("User: %s\n",usernameLeido);
 
-    printf("User: %s\n",usuarioLeido);
+    memcpy(usuarioDestino.name,usernameLeido, sizeof(usernameLeido));
 
-    int indiceUsuarioDestino = buscarUsuario(usuarioLeido);
-    printf("indice: %d",indiceUsuarioDestino);
+    indiceUDestino = buscarUsuario(usuarioDestino);
+    // int indiceUsuarioDestino = 1;
+    // printf("indice: %d\n",indiceUsuarioDestino);
     
-    if(indiceUsuarioDestino == CODIGO_FALLIDO){
+    if(indiceUDestino == CODIGO_FALLIDO){
         n = send(socket,"-1",sizeof("-1"),0);
         printf("Usuario no encontrado");
     }
@@ -213,8 +219,8 @@ void handleSendMessage(int socket){
         n = send(socket,"0",sizeof("0"),0);
         printf("Usuario encontrado");
 
-        usuarioDestino = users[indiceUsuarioDestino];
-        sendMessage(socket, usuarioDestino);
+        usuarioDestino = users[indiceUDestino];
+        sendMessage(socket, indiceUsuarioLogueado, usuarioDestino);
     }
 
     printf("Chat finalizado");
@@ -226,7 +232,12 @@ int handleBuscarUsuario(int socket){
 
     int n = recv(socket, username, sizeof(username),0);
 
-    User usuarioBuscado = users[buscarUsuario(username)];
+    User usuarioBuscado;
+    // usuarioBuscado.name = username;
+
+    memcpy(usuarioBuscado.name,username, sizeof(username));
+
+    usuarioBuscado = users[buscarUsuario(usuarioBuscado)];
 
     n = send(socket, usuarioBuscado.name, sizeof(usuarioBuscado.id), 0);
 }
@@ -255,7 +266,7 @@ void handleLoggedUser(int socket, int indiceUsuario){
         
     if(strcmp(comando,"E\0") == 0){        
         printf("Iniciando chat\n");
-        handleSendMessage(socket);
+        handleSendMessage(socket, indiceUsuario);
     }
     else if(strcmp(comando,"V\0") == 0){        
         printf("Mostrando mensajes\n");
@@ -347,6 +358,7 @@ int main(int argc, char* argv[]){
 
     users[0].id = 1;
     strcpy(users[0].name,"fb");
+    strcpy(users[0].buf,"Hola\n");
     users[0].status = 0;
 
     users[1].id = 2;

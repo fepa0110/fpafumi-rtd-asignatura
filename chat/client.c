@@ -111,15 +111,16 @@ void nuevoChat(int socketfd){
     char user[10] = " ";
     bool salir = false; 
     char mensaje[25];
-    char respuesta[2];
+    char respuesta[3];
 
-    vaciarStdin();
+    // vaciarStdin();
 
+    // printf("sieze:%d\n",sizeof("-1"));
     while (strcmp(user, " ") == 0){
         printf("Ingrese un usuario con quien deseas chatear: ");
         scanf("%s", &user);
     }
-    printf("%s\n", user);
+    printf("usuario: %s\n", user);
     strcat(comando,user);
 
     // Envio el comando E<username>
@@ -136,7 +137,7 @@ void nuevoChat(int socketfd){
         printf("Ingrese un mensaje: ");
         scanf("%s",&mensaje);
 
-        int mensajeEnviado = send(socketfd, &comando, sizeof(comando), 0);
+        int mensajeEnviado = send(socketfd, &mensaje, sizeof(mensaje), 0);
         printf("--- Mensaje enviado: %d ---\n\n",mensajeEnviado);
     }
     else printf("--- Hubo un error al enviar el mensaje ---\n\n");
@@ -201,7 +202,7 @@ void verMensajes(int socketfd){
 
     printf("--Mis mensajes--\n\n");
 
-    printf("%s",mensajes);
+    printf("%s\n",mensajes);
     printf("Escribi \"salir\" para volver atras\n");
 
     do{
